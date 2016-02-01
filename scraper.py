@@ -38,9 +38,10 @@ class SiteMapGenerator(object):
         self.urls = {self.begin_url}
         self.processed_links = []
 
-        self.internal_pages = []
-        self.static_content = []
-        self.external_pages = []
+        self.internal_pages = set()
+        self.static_content = set()
+        self.external_pages = set()
+        self.emails = set()
 
     def Process(self):
         while len(self.processed_links) < len(self.urls):
@@ -49,7 +50,7 @@ class SiteMapGenerator(object):
 
             # are we dealing with an external url?
             if not self.SameSite(next_url):
-                self.external_pages.append(next_url)
+                self.external_pages.update([next_url])
                 continue
 
             self.__ParseUrl(next_url)
@@ -67,18 +68,24 @@ class SiteMapGenerator(object):
         parser = MyHTMLParser()
         parser.feed(parsed_data)
 
-        # add found links, turning relative URLs into absolute URLs
-        self.urls.update([self.MakeUrlAbsolute(link) for link in parser.links])
+        self.emails.update([url for url in parser.links if url.startswith('mailto:')])
 
-        self.static_content.append(parser.images)
+        # don't parse any mailto links, as they'll throw the MakeUrlAbsolute method
+        mail_free_links = [url for url in parser.links if not url.startswith('mailto:')]
+
+        # add found links, turning relative URLs into absolute URLs
+        self.urls.update([self.MakeUrlAbsolute(link) for link in mail_free_links])
+
+        self.static_content.update(parser.images)
         
-        self.internal_pages.append(url)
+        self.internal_pages.update([url])
 
     def SameSite(self, url):
         original_net_loc_split = self.parsed_url.netloc.split('.')
         checking_net_loc_split = urlparse.urlparse(url).netloc.split('.')
         
-        # check that the site is in the same, handling the case where we may have xxx.com and www.xxx.com urls
+        # check that the site is in the same, handling the case where we may
+        # have abc.com and www.abc.com urls
         if self.parsed_url.netloc == urlparse.urlparse(url).netloc:
             return True
 
@@ -109,3 +116,4 @@ if __name__ == '__main__':
     print 'Internal pages: %s' % generator.internal_pages
     print 'Static content URLs: %s' % generator.static_content
     print 'External pages: %s' % generator.external_pages
+    print 'Email links: %s' % generator.emails
