@@ -74,7 +74,7 @@ class SiteMapGenerator(object):
         mail_free_links = [url for url in parser.links if not url.startswith('mailto:')]
 
         # add found links, turning relative URLs into absolute URLs
-        self.urls.update([self.MakeUrlAbsolute(link) for link in mail_free_links])
+        self.urls.update([self.ProcessUrl(link) for link in mail_free_links])
 
         self.static_content.update(parser.images)
         
@@ -100,9 +100,19 @@ class SiteMapGenerator(object):
 
         return False
 
+    def ProcessUrl(self, url):
+        # Remove the single fragment identifier
+        # (we only have to worry about everything before the identifier, as
+        # indicated in https://tools.ietf.org/html/rfc3986)
+        url = url.split('#')[0]
+
+        return self.MakeUrlAbsolute(url)
+
     def MakeUrlAbsolute(self, url):
         parsed_link = urlparse.urlparse(url)
         if not parsed_link.netloc:
+            if url.startswith('/'):
+                url = url[1:]
             return '%s://%s/%s' % (self.parsed_url.scheme, self.parsed_url.netloc, url)
         else:
             return url
