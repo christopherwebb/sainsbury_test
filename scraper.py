@@ -2,6 +2,7 @@ from HTMLParser import HTMLParser
 import urllib
 import urlparse
 import pprint
+import sys
 
 class MyHTMLParser(HTMLParser):
     def __init__(self, *args, **kwargs):
@@ -159,7 +160,7 @@ class SiteMapGenerator(object):
             return url
 
 if __name__ == '__main__':
-    begin_url = 'http://www.wiprodigital.com'
+    begin_url = sys.argv[1]
     generator = SiteMapGenerator(begin_url)
 
     generator.Process()
