@@ -91,7 +91,7 @@ class SiteMapGenerator(object):
             self.processed_links.append(next_url)
 
             # are we dealing with an external url?
-            if not self.SameSite(next_url):
+            if not self.IsSameSite(next_url):
                 self.external_pages.update([next_url])
                 continue
 
@@ -122,7 +122,7 @@ class SiteMapGenerator(object):
         # Add the url we ended up being redirected to
         self.internal_pages.update([parser.GetUrl()])
 
-    def SameSite(self, url):
+    def IsSameSite(self, url):
         original_net_loc_split = self.parsed_url.netloc.split('.')
         checking_net_loc_split = urlparse.urlparse(url).netloc.split('.')
         
