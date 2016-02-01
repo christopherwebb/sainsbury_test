@@ -10,20 +10,33 @@ class MyHTMLParser(HTMLParser):
         
         self.links = []
         self.images = []
+        self.css = []
 
     def handle_starttag(self, tag, attrs):
         if tag == 'a':
             for attr in attrs:
                 if attr[0] == 'href':
                     self.links.append(attr[1])
+
         elif tag == 'img':
             for attr in attrs:
                 if attr[0] == 'src':
                     self.images.append(attr[1])
-        # elif tag == 'link':
-        #     for attr in attrs:
-        #         if attr[0] == 'src':
-        #             self.images.append(attr[1])
+
+        elif tag == 'link':
+            is_stylesheet = False
+            src = ''
+            for attr in attrs:
+                if attr[0] == 'rel':
+                    is_stylesheet = 'stylesheet' in attr[1]
+                elif attr[0] == 'src':
+                    src = attr[1]
+
+            if src and is_stylesheet:
+                self.css.append(src)
+            elif src:
+                self.links.append(src)
+
 
         # elif tag == 'link':
         #     for attr in attrs:
@@ -77,6 +90,7 @@ class SiteMapGenerator(object):
         self.urls.update([self.ProcessUrl(link) for link in mail_free_links])
 
         self.static_content.update(parser.images)
+        self.static_content.update(parser.css)
         
         self.internal_pages.update([url])
 
