@@ -43,6 +43,32 @@ class MyHTMLParser(HTMLParser):
                 if attr[0] == 'src':
                     self.scripts.append(attr[1])
 
+class Parser(object):
+    def __init__(self, url):
+        self.url = url
+        self.req_response = None
+
+    def Get(self):
+        self.req_response = urllib.urlopen(self.url)
+
+    def Failure(self):
+        return self.req_response.getcode() >= 400
+
+    def GetParsedData(self):
+        encoding = self.req_response.headers.getparam('charset')
+        parsed_data = None
+        if encoding:
+            parsed_data = self.req_response.read().decode(encoding)
+        else:
+            parsed_data = self.req_response.read()
+
+        parser = MyHTMLParser()
+        parser.feed(parsed_data)
+
+        return parser
+
+    def GetUrl(self):
+        self.req_response.geturl()
 
 class SiteMapGenerator(object):
     def __init__(self, begin_url):
@@ -55,6 +81,8 @@ class SiteMapGenerator(object):
         self.static_content = set()
         self.external_pages = set()
         self.emails = set()
+
+        self.parser_class = Parser
 
     def Process(self):
         while len(self.processed_links) < len(self.urls):
@@ -69,36 +97,29 @@ class SiteMapGenerator(object):
             self.__ParseUrl(next_url)
 
     def __ParseUrl(self, url):
-        reqResponse = urllib.urlopen(url)
-
-        print 'scraping: %s' % url
-
-        if (reqResponse.getcode() >= 400):
+        parser = self.parser_class(url)
+        parser.Get()
+        if parser.Failure():
             return
 
-        encoding = reqResponse.headers.getparam('charset')
-        if encoding:
-            parsed_data = reqResponse.read().decode(encoding)
-        else:
-            parsed_data = reqResponse.read()
+        print 'parsed: %s' % url
 
-        parser = MyHTMLParser()
-        parser.feed(parsed_data)
+        parsed_data = parser.GetParsedData()
 
-        self.emails.update([url for url in parser.links if url.startswith('mailto:')])
+        self.emails.update([url for url in parsed_data.links if url.startswith('mailto:')])
 
         # don't parse any mailto links, as they'll throw the MakeUrlAbsolute method
-        mail_free_links = [url for url in parser.links if not url.startswith('mailto:')]
+        mail_free_links = [url for url in parsed_data.links if not url.startswith('mailto:')]
 
         # add found links, turning relative URLs into absolute URLs
         self.urls.update([self.ProcessUrl(link) for link in mail_free_links])
 
-        self.static_content.update(parser.images)
-        self.static_content.update(parser.css)
-        self.static_content.update(parser.scripts)
+        self.static_content.update(parsed_data.images)
+        self.static_content.update(parsed_data.css)
+        self.static_content.update(parsed_data.scripts)
         
         # Add the url we ended up being redirected to
-        self.internal_pages.update([reqResponse.geturl()])
+        self.internal_pages.update([parser.GetUrl()])
 
     def SameSite(self, url):
         original_net_loc_split = self.parsed_url.netloc.split('.')
