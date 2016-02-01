@@ -11,6 +11,7 @@ class MyHTMLParser(HTMLParser):
         self.links = []
         self.images = []
         self.css = []
+        self.scripts = []
 
     def handle_starttag(self, tag, attrs):
         if tag == 'a':
@@ -37,11 +38,10 @@ class MyHTMLParser(HTMLParser):
             elif src:
                 self.links.append(src)
 
-
-        # elif tag == 'link':
-        #     for attr in attrs:
-        #         if attr[0] == 'src':
-        #             self.images.append(attr[1])
+        elif tag == 'script':
+            for attr in attrs:
+                if attr[0] == 'src':
+                    self.scripts.append(attr[1])
 
 
 class SiteMapGenerator(object):
@@ -95,6 +95,7 @@ class SiteMapGenerator(object):
 
         self.static_content.update(parser.images)
         self.static_content.update(parser.css)
+        self.static_content.update(parser.scripts)
         
         # Add the url we ended up being redirected to
         self.internal_pages.update([reqResponse.geturl()])
