@@ -29,7 +29,7 @@ class MyHTMLParser(HTMLParser):
             for attr in attrs:
                 if attr[0] == 'rel':
                     is_stylesheet = 'stylesheet' in attr[1]
-                elif attr[0] == 'src':
+                elif attr[0] == 'href':
                     src = attr[1]
 
             if src and is_stylesheet:
@@ -69,14 +69,18 @@ class SiteMapGenerator(object):
             self.__ParseUrl(next_url)
 
     def __ParseUrl(self, url):
-        urlHandle = urllib.urlopen(url)
+        reqResponse = urllib.urlopen(url)
+
         print 'scraping: %s' % url
 
-        encoding = urlHandle.headers.getparam('charset')
+        if (reqResponse.getcode() >= 400):
+            return
+
+        encoding = reqResponse.headers.getparam('charset')
         if encoding:
-            parsed_data = urlHandle.read().decode(encoding)
+            parsed_data = reqResponse.read().decode(encoding)
         else:
-            parsed_data = urlHandle.read()
+            parsed_data = reqResponse.read()
 
         parser = MyHTMLParser()
         parser.feed(parsed_data)
@@ -92,7 +96,8 @@ class SiteMapGenerator(object):
         self.static_content.update(parser.images)
         self.static_content.update(parser.css)
         
-        self.internal_pages.update([url])
+        # Add the url we ended up being redirected to
+        self.internal_pages.update([reqResponse.geturl()])
 
     def SameSite(self, url):
         original_net_loc_split = self.parsed_url.netloc.split('.')
