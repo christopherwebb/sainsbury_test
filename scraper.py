@@ -1,8 +1,12 @@
 from HTMLParser import HTMLParser
+import json
+import logging
 import urllib
 import urlparse
 import pprint
 import sys
+
+logger = logging.getLogger(__name__)
 
 class MyHTMLParser(HTMLParser):
     def __init__(self, *args, **kwargs):
@@ -69,7 +73,7 @@ class Parser(object):
         return parser
 
     def GetUrl(self):
-        self.req_response.geturl()
+        return self.req_response.geturl()
 
 class SiteMapGenerator(object):
     def __init__(self, begin_url):
@@ -103,7 +107,7 @@ class SiteMapGenerator(object):
         if parser.Failure():
             return
 
-        print 'parsed: %s' % url
+        logger.info('parsed: %s' % url)
 
         parsed_data = parser.GetParsedData()
 
@@ -120,6 +124,7 @@ class SiteMapGenerator(object):
         self.static_content.update(parsed_data.scripts)
         
         # Add the url we ended up being redirected to
+        logger.info('Adding Url: %s' % parser.GetUrl())
         self.internal_pages.update([parser.GetUrl()])
 
     def IsSameSite(self, url):
@@ -160,12 +165,20 @@ class SiteMapGenerator(object):
             return url
 
 if __name__ == '__main__':
+    logging.basicConfig(level=logging.INFO)
     begin_url = sys.argv[1]
+    result_filename = sys.argv[2]
+
     generator = SiteMapGenerator(begin_url)
 
     generator.Process()
 
-    print 'Internal pages: %s' % generator.internal_pages
-    print 'Static content URLs: %s' % generator.static_content
-    print 'External pages: %s' % generator.external_pages
-    print 'Email links: %s' % generator.emails
+    with open(result_filename, 'w') as result_file:
+        result_file.write(
+            json.dumps({
+                'internal': list(generator.internal_pages),
+                'static': list(generator.static_content),
+                'external': list(generator.external_pages),
+                'emails': list(generator.emails)
+            }, indent=4, sort_keys=True)
+        )

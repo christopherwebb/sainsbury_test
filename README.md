@@ -14,3 +14,4 @@
 * Doesn't handle a few cases, like id linking and mailtos.
 * Will only find images included in img elements, ie will not discover images loaded by css background
 * Won't find css files linked to from within css files
+* Won't find pages that are only discoverable via a form submission
