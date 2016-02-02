@@ -1,10 +1,12 @@
 import unittest
 
-from scraper import MyHTMLParser
+# from scraper import MyHTMLParser
+from SiteCrawler.MyHtmlParser import MyHtmlParser
+
 
 class TestParser(unittest.TestCase):
   def setUp(self):
-    self.parser = MyHTMLParser()
+    self.parser = MyHtmlParser()
 
   def test_finds_css_links(self):
       self.parser.feed('<link rel="stylesheet" href="/style.css" />')
