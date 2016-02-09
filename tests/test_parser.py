@@ -1,15 +1,16 @@
 import unittest
 
 # from scraper import MyHTMLParser
-from SiteCrawler.MyHtmlParser import MyHtmlParser
+from SiteCrawler.Parser import MasterPageParser, ProductPageParser
 
 
 class TestParser(unittest.TestCase):
   def setUp(self):
-    self.parser = MyHtmlParser()
+    self.parser = MasterPageParser()
+    self.parser.py_query = pq('')
 
   def test_finds_css_links(self):
-      self.parser.feed('<link rel="stylesheet" href="/style.css" />')
+      '<ul class="productLister"><li><h3></h3></li></ul>'
       self.assertEqual(self.parser.css, ['/style.css'])
 
   def test_finds_js_script_links(self):
