@@ -43,17 +43,24 @@ class MasterPageParser(Parser):
 class ProductPageParser(Parser):
     def GetResults(self):
         desc_title_results = self.py_query('h3.productDataItemHeader:contains(\'Description\')')
-        desc_element = desc_title_results[0].getnext()
+        description = None
+        if desc_title_results:
+            desc_element = desc_title_results[0].getnext()
 
-        description = ' '.join([child.text for child in desc_element.getchildren() if child.text]).strip()
+            description = ' '.join([
+                child.text for child in desc_element.getchildren() if child.text
+            ]).strip()
 
         pricing_results = self.py_query('.pricing .pricePerUnit')
+        unit_price = None
+        if pricing_results:
+            unit_price = float(pricing_results[0].text.strip()[1:])
 
         title = self.py_query('.productTitleDescriptionContainer h1').text()
 
         return {
             'description': description,
-            'unit_price': float(pricing_results[0].text.strip()[1:]),
+            'unit_price': unit_price,
             'title': title,
             'size': '%.1fKb' % (self.size / 1024)
         }
